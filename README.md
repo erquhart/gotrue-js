@@ -1,3 +1,5 @@
+### Note: this is a temporary fork with React Native support
+
 ![gotrue-js library](gotrue-js.png)
 
 [![Build Status](https://travis-ci.org/netlify/gotrue-js.svg?branch=main)](https://travis-ci.org/netlify/gotrue-js)

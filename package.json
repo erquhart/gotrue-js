@@ -1,5 +1,5 @@
 {
-  "name": "gotrue-js",
+  "name": "@erquhart/gotrue-js",
   "description": "GoTrue API client for JavaScript",
   "version": "0.9.29",
   "author": "Mathias Biilmann Christensen",
