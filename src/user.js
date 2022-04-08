@@ -11,16 +11,17 @@ const forbiddenSaveAttributes = { api: 1 };
 const isBrowser = () => typeof window !== 'undefined';
 
 export default class User {
-  constructor(api, tokenResponse, audience) {
+  constructor(api, tokenResponse, audience, store) {
     this.api = api;
     this.url = api.apiURL;
     this.audience = audience;
+    this.store = store;
     this._processTokenResponse(tokenResponse);
     currentUser = this;
   }
 
   static removeSavedSession() {
-    isBrowser() && localStorage.removeItem(storageKey);
+    isBrowser() && this.store.removeItem(storageKey);
   }
 
   static recoverSession(apiInstance) {
@@ -28,7 +29,7 @@ export default class User {
       return currentUser;
     }
 
-    const json = isBrowser() && localStorage.getItem(storageKey);
+    const json = isBrowser() && this.store.getItem(storageKey);
     if (json) {
       try {
         const data = JSON.parse(json);
@@ -161,7 +162,7 @@ export default class User {
 
   _refreshSavedSession() {
     // only update saved session if we previously saved something
-    if (isBrowser() && localStorage.getItem(storageKey)) {
+    if (isBrowser() && this.store.getItem(storageKey)) {
       this._saveSession();
     }
     return this;
@@ -179,7 +180,7 @@ export default class User {
   }
 
   _saveSession() {
-    isBrowser() && localStorage.setItem(storageKey, JSON.stringify(this._details));
+    isBrowser() && this.store.setItem(storageKey, JSON.stringify(this._details));
     return this;
   }
 

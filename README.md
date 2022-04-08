@@ -26,6 +26,7 @@ auth = new GoTrue({
   APIUrl: 'https://<your domain name>/.netlify/identity',
   audience: '',
   setCookie: false,
+  store: localStorage,
 });
 ```
 
@@ -36,6 +37,28 @@ APIUrl: The absolute path of the GoTrue endpoint. To find the `APIUrl`, go to `I
 audience(optional): `audience` is one of the pre-defined [JWT payload](https://tools.ietf.org/html/rfc7519#section-4.1.3) claims. It's an optional attribute which is set to be empty by default. If you were hosting your own identity service and wanted to support [multitenancy](https://en.wikipedia.org/wiki/Multitenancy), you would need `audience` to separate the users.
 
 setCookie(optional): set to be `false` by default. If you wish to implement the `remember me` functionality, set the value to be `true`.
+
+store(optional): a store that implements the [localStorage
+API](https://developer.mozilla.org/en-US/docs/Web/API/Storage) - specifically `getItem`, `setItem`,
+and `removeItem` as synchronous functions. The default store is localStorage.
+
+### Using with React Native
+The `store` configuration can be used to provide any synchronous storage method, as long as the
+localStorage API is used. The [react-native-mmkv](https://github.com/mrousavy/react-native-mmkv)
+library provides synchronous storage - here's an example implementation:
+
+```
+// Initialize MMKV - please reference their docs in case their API changes
+const storage = new MMKV()
+const auth = new GoTrue({
+  APIUrl: 'https://<your domain name>/.netlify/identity',
+  store: {
+    getItem: storage.getString
+    setItem: storage.set
+    removeItem: storage.delete
+  }
+})
+```
 
 ### Error handling
 
