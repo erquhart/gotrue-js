@@ -10,7 +10,7 @@ export default class GoTrue {
     APIUrl = defaultApiURL,
     audience = '',
     setCookie = false,
-    store = localStorage,
+    store,
   } = {}) {
     if (HTTPRegexp.test(APIUrl)) {
       console.warn(

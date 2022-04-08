@@ -55,10 +55,10 @@ const storage = new MMKV()
 const auth = new GoTrue({
   APIUrl: 'https://<your domain name>/.netlify/identity',
   store: {
-    getItem: storage.getString
-    setItem: storage.set
-    removeItem: storage.delete
-  }
+    getItem: storage.getString,
+    setItem: storage.set,
+    removeItem: storage.delete,
+  },
 })
 ```
 

@@ -21,7 +21,11 @@ export default class User {
   }
 
   static removeSavedSession() {
-    isBrowser() && this.store.removeItem(storageKey);
+    try {
+      isBrowser() && this.store.removeItem(storageKey);
+    } catch(err) {
+      console.log('removeSavedSession failed')
+    }
   }
 
   static recoverSession(apiInstance) {
