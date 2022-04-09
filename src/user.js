@@ -20,20 +20,16 @@ export default class User {
     currentUser = this;
   }
 
-  static removeSavedSession() {
-    try {
-      isBrowser() && this.store.removeItem(storageKey);
-    } catch(err) {
-      console.log('removeSavedSession failed')
-    }
+  static removeSavedSession(store) {
+    isBrowser() && store.removeItem(storageKey);
   }
 
-  static recoverSession(apiInstance) {
+  static recoverSession(apiInstance, store) {
     if (currentUser) {
       return currentUser;
     }
 
-    const json = isBrowser() && this.store.getItem(storageKey);
+    const json = isBrowser() && store.getItem(storageKey);
     if (json) {
       try {
         const data = JSON.parse(json);
@@ -43,7 +39,7 @@ export default class User {
         }
 
         const api = apiInstance || new API(url, {});
-        return new User(api, token, audience)._saveUserData(data, true);
+        return new User(api, token, audience, store)._saveUserData(data, true);
       } catch (error) {
         console.error(new Error(`Gotrue-js: Error recovering session: ${error}`));
         return null;

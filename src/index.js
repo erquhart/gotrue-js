@@ -69,7 +69,7 @@ export default class GoTrue {
         email,
       )}&password=${encodeURIComponent(password)}`,
     }).then((response) => {
-      User.removeSavedSession();
+      User.removeSavedSession(this.store);
       return this.createUser(response, remember);
     });
   }
@@ -119,7 +119,7 @@ export default class GoTrue {
   }
 
   currentUser() {
-    const user = User.recoverSession(this.api);
+    const user = User.recoverSession(this.api, this.store);
     user && this._setRememberHeaders(user._fromStorage);
     return user;
   }
