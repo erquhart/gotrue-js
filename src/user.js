@@ -6,30 +6,31 @@ const ExpiryMargin = 60 * 1000;
 const storageKey = 'gotrue.user';
 const refreshPromises = {};
 let currentUser = null;
+let store = null;
 const forbiddenUpdateAttributes = { api: 1, token: 1, audience: 1, url: 1 };
 const forbiddenSaveAttributes = { api: 1 };
 const isBrowser = () => typeof window !== 'undefined';
 
 export default class User {
-  constructor(api, tokenResponse, audience, store) {
+  constructor(api, tokenResponse, audience, userStore) {
     this.api = api;
     this.url = api.apiURL;
     this.audience = audience;
-    this.store = store;
     this._processTokenResponse(tokenResponse);
+    store = userStore;
     currentUser = this;
   }
 
-  static removeSavedSession(store) {
-    isBrowser() && store.removeItem(storageKey);
+  static removeSavedSession(receivedStore) {
+    return isBrowser() && receivedStore.removeItem(storageKey);
   }
 
-  static recoverSession(apiInstance, store) {
+  static async recoverSession(apiInstance, receivedStore) {
     if (currentUser) {
       return currentUser;
     }
 
-    const json = isBrowser() && store.getItem(storageKey);
+    const json = isBrowser() && (await receivedStore.getItem(storageKey));
     if (json) {
       try {
         const data = JSON.parse(json);
@@ -39,7 +40,7 @@ export default class User {
         }
 
         const api = apiInstance || new API(url, {});
-        return new User(api, token, audience, store)._saveUserData(data, true);
+        return new User(api, token, audience, receivedStore)._saveUserData(data, true);
       } catch (error) {
         console.error(new Error(`Gotrue-js: Error recovering session: ${error}`));
         return null;
@@ -78,29 +79,26 @@ export default class User {
       .catch(this.clearSession.bind(this));
   }
 
-  _refreshToken(refresh_token) {
+  async _refreshToken(refresh_token) {
     if (refreshPromises[refresh_token]) {
       return refreshPromises[refresh_token];
     }
 
-    return (refreshPromises[refresh_token] = this.api
-      .request('/token', {
+    try {
+      const response = await this.api.request('/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `grant_type=refresh_token&refresh_token=${refresh_token}`,
-      })
-      .then((response) => {
-        delete refreshPromises[refresh_token];
-        this._processTokenResponse(response);
-        this._refreshSavedSession();
-        return this.token.access_token;
-      })
-      // eslint-disable-next-line promise/prefer-await-to-callbacks
-      .catch((error) => {
-        delete refreshPromises[refresh_token];
-        this.clearSession();
-        throw error;
-      }));
+      });
+      delete refreshPromises[refresh_token];
+      this._processTokenResponse(response);
+      await this._refreshSavedSession();
+      refreshPromises[refresh_token] = this.token.access_token;
+    } catch (error) {
+      delete refreshPromises[refresh_token];
+      await this.clearSession();
+      throw error;
+    }
   }
 
   async _request(path, options = {}) {
@@ -160,10 +158,10 @@ export default class User {
     }
   }
 
-  _refreshSavedSession() {
+  async _refreshSavedSession() {
     // only update saved session if we previously saved something
-    if (isBrowser() && this.store.getItem(storageKey)) {
-      this._saveSession();
+    if (isBrowser() && (await store.getItem(storageKey))) {
+      await this._saveSession();
     }
     return this;
   }
@@ -179,8 +177,8 @@ export default class User {
     return userCopy;
   }
 
-  _saveSession() {
-    isBrowser() && this.store.setItem(storageKey, JSON.stringify(this._details));
+  async _saveSession() {
+    isBrowser() && (await store.setItem(storageKey, JSON.stringify(this._details)));
     return this;
   }
 
@@ -188,8 +186,8 @@ export default class User {
     return this.token;
   }
 
-  clearSession() {
-    User.removeSavedSession();
+  async clearSession() {
+    await User.removeSavedSession(store);
     this.token = null;
     currentUser = null;
   }

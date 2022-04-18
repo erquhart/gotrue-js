@@ -6,12 +6,7 @@ const HTTPRegexp = /^http:\/\//;
 const defaultApiURL = `/.netlify/identity`;
 
 export default class GoTrue {
-  constructor({
-    APIUrl = defaultApiURL,
-    audience = '',
-    setCookie = false,
-    store,
-  } = {}) {
+  constructor({ APIUrl = defaultApiURL, audience = '', setCookie = false, store } = {}) {
     if (HTTPRegexp.test(APIUrl)) {
       console.warn(
         'Warning:\n\nDO NOT USE HTTP IN PRODUCTION FOR GOTRUE EVER!\nGoTrue REQUIRES HTTPS to work securely.',
@@ -60,18 +55,17 @@ export default class GoTrue {
     });
   }
 
-  login(email, password, remember) {
+  async login(email, password, remember) {
     this._setRememberHeaders(remember);
-    return this._request('/token', {
+    const response = await this._request('/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `grant_type=password&username=${encodeURIComponent(
         email,
       )}&password=${encodeURIComponent(password)}`,
-    }).then((response) => {
-      User.removeSavedSession(this.store);
-      return this.createUser(response, remember);
     });
+    await User.removeSavedSession(this.store);
+    return this.createUser(response, remember);
   }
 
   loginExternalUrl(provider) {
@@ -107,19 +101,18 @@ export default class GoTrue {
     return `${this.api.apiURL}/authorize?provider=${provider}&invite_token=${token}`;
   }
 
-  createUser(tokenResponse, remember = false) {
+  async createUser(tokenResponse, remember = false) {
     this._setRememberHeaders(remember);
     const user = new User(this.api, tokenResponse, this.audience, this.store);
-    return user.getUserData().then((userData) => {
-      if (remember) {
-        userData._saveSession();
-      }
-      return userData;
-    });
+    const userData = await user.getUserData();
+    if (remember) {
+      await userData._saveSession();
+    }
+    return userData;
   }
 
-  currentUser() {
-    const user = User.recoverSession(this.api, this.store);
+  async currentUser() {
+    const user = await User.recoverSession(this.api, this.store);
     user && this._setRememberHeaders(user._fromStorage);
     return user;
   }
